@@ -20,6 +20,8 @@ class Politician(SQLModel, table=True):
 
 
 class VoteRecord(SQLModel, table=True):
+    __tablename__ = "vote_records"
+    
     """
     Represents a voting record of a politician.
     """
@@ -32,6 +34,8 @@ class VoteRecord(SQLModel, table=True):
 
 
 class Gift(SQLModel, table=True):
+    __tablename__ = "gifts"
+    
     """
     Represents a gift received by a politician.
     """
