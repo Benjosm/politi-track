@@ -1,0 +1,22 @@
+# Project Setup Instructions
+
+## Backend Setup
+1. Installed Python dependencies:
+   ```bash
+   pip3 install poetry
+   echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+   export PATH="$HOME/.local/bin:$PATH"
+   /home/node/.local/bin/poetry install
+   ```
+
+## Frontend Setup
+1. Installed Node.js dependencies:
+   ```bash
+   cd client && npm install
+   ```
+
+## Verification
+- Backend: `poetry run uvicorn server.main:app --port 8000` should start the server
+- Frontend: `cd client && npm run dev` should start the development server
+
+Note: Poetry was installed to /home/node/.local/bin/ since the user doesn't have sudo access. PATH was updated in .bashrc to include this directory.
