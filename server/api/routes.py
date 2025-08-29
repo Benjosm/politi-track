@@ -1,24 +1,64 @@
-from fastapi import APIRouter, Query, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Query, Depends, HTTPException
+from sqlmodel import Session, select, or_, func
+from typing import List
+from server.models import Politician, VoteRecord, Gift
+from server.database import get_session
 
 router = APIRouter()
 
-# Placeholder dependency – will be properly implemented with database setup
-def get_db():
-    # Simulate a DB session; actual dependency will come from main app setup
-    pass
 
-async def search_politicians(db: Session, query_string: str):
+
+async def search_politicians(db: Session, q: str) -> List[dict]:
     """
-    Hypothetical function to search politicians by name, party, state, etc.
-    Will be implemented once the Politician model is ready.
+    Search politicians by name, bill details, or gift descriptions.
+    Returns distinct politicians matching the query.
     """
-    raise NotImplementedError("Database integration not yet implemented")
+    try:
+        # Convert search query to lowercase for case-insensitive matching
+        search_term = q.lower()
+        
+        # Build a query to find politicians with matching name, bill details, or gift descriptions
+        # Use distinct() to ensure no duplicate politicians are returned
+        query = (
+            select(Politician)
+            .distinct()
+            .where(
+                or_(
+                    func.lower(Politician.name).contains(search_term),
+                    Politician.vote_records.any(or_(
+                        func.lower(VoteRecord.bill_name).contains(search_term),
+                        func.lower(VoteRecord.bill_status).contains(search_term)
+                    )),
+                    Politician.gifts.any(func.lower(Gift.description).contains(search_term))
+                )
+            )
+            .order_by(Politician.name)
+        )
+        
+        # Execute the query
+        results = db.exec(query).all()
+        
+        # Project results to include only the required fields
+        return [
+            {
+                "id": politician.id,
+                "name": politician.name,
+                "party": politician.party,
+                "office": politician.office,
+                "term_start": politician.term_start.isoformat() if politician.term_start else None,
+                "term_end": politician.term_end.isoformat() if politician.term_end else None
+            }
+            for politician in results
+        ]
+        
+    except Exception as e:
+        # Re-raise the exception to be handled by the endpoint
+        raise e
 
 @router.get("/search")
 async def search(
-    q: str = Query(..., min_length=1, max_length=100, pattern=r"^[a-zA-Z0-9 ]{1,100}$", description="Alphanumeric search term (1-100 chars)"),
-    db: Session = Depends(get_db)
+    q: str = Query(..., min_length=1, max_length=100, pattern=r"^[a-zA-Z0-9 \\'-.]{1,100}$", description="Alphanumeric search term with hyphens and apostrophes (1-100 chars)"),
+    db: Session = Depends(get_session)
 ):
     """
     Search endpoint for politician data.
@@ -28,10 +68,6 @@ async def search(
     try:
         results = await search_politicians(db, q)
         return {"results": results}
-    except NotImplementedError:
-        # Feature not implemented yet – return empty results for now
-        return {"results": []}
     except Exception as e:
-        # Log the exception (in real implementation, use proper logging)
-        # For now, respond with a generic 500 error
-        return {"error": "Internal server error occurred while processing your request."}, 500
+        # Return 500 Internal Server Error for database connection errors
+        raise HTTPException(status_code=500, detail="Internal server error occurred while processing your request.")
