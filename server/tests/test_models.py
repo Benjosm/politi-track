@@ -1,10 +1,20 @@
 import pytest
 from sqlmodel import SQLModel, create_engine, inspect, Session
-from models import Politician, VoteRecord, Gift
+from server.models import Politician, VoteRecord, Gift
 from datetime import date
+from sqlalchemy import event
+from sqlite3 import Connection
 
 # Create an in-memory SQLite engine for testing
 engine = create_engine("sqlite:///:memory:")
+
+# Enable foreign key constraints for SQLite
+@event.listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    if isinstance(dbapi_connection, Connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 # Set up the database schema before tests run
 SQLModel.metadata.create_all(engine)
@@ -59,7 +69,7 @@ def test_table_schema():
     vote_record_columns = inspector.get_columns("vote_records")
     vote_record_col_names = [col["name"] for col in vote_record_columns]
     
-    expected_vote_record_cols = ["id", "bill_name", "bill_status", "vote_outcome", "session_year", "politician_id"]
+    expected_vote_record_cols = ["id", "bill_name", "bill_status", "vote_position", "session_year", "politician_id"]
     assert sorted(vote_record_col_names) == sorted(expected_vote_record_cols)
     
     # Verify id is primary key
@@ -78,10 +88,10 @@ def test_table_schema():
     assert "varchar" in str(bill_status_column["type"]).lower() or "text" in str(bill_status_column["type"]).lower()
     assert not bill_status_column["nullable"]
     
-    # Verify vote_outcome column
-    vote_outcome_column = next(col for col in vote_record_columns if col["name"] == "vote_outcome")
-    assert "varchar" in str(vote_outcome_column["type"]).lower() or "text" in str(vote_outcome_column["type"]).lower()
-    assert not vote_outcome_column["nullable"]
+    # Verify vote_position column (was mistakenly called vote_outcome)
+    vote_position_column = next(col for col in vote_record_columns if col["name"] == "vote_position")
+    assert "varchar" in str(vote_position_column["type"]).lower() or "text" in str(vote_position_column["type"]).lower()
+    assert not vote_position_column["nullable"]
     
     # Verify session_year column
     session_year_column = next(col for col in vote_record_columns if col["name"] == "session_year")
@@ -162,7 +172,7 @@ def test_data_lifecycle():
     test_vote_record = VoteRecord(
         bill_name="HB-1001",
         bill_status="Passed",
-        vote_outcome="Yes",
+        vote_position="Yes",
         session_year=2023,
         politician_id=1
     )
@@ -206,7 +216,7 @@ def test_data_lifecycle():
         assert retrieved_vote_record is not None
         assert retrieved_vote_record.bill_name == test_vote_record.bill_name
         assert retrieved_vote_record.bill_status == test_vote_record.bill_status
-        assert retrieved_vote_record.vote_outcome == test_vote_record.vote_outcome
+        assert retrieved_vote_record.vote_position == test_vote_record.vote_position
         assert retrieved_vote_record.session_year == test_vote_record.session_year
         assert retrieved_vote_record.politician_id == test_vote_record.politician_id
         
@@ -239,7 +249,7 @@ def test_relationships():
         vote1 = VoteRecord(
             bill_name="HB-1001",
             bill_status="Passed",
-            vote_outcome="Yes",
+            vote_position="Yes",
             session_year=2023,
             politician_id=politician.id
         )
@@ -247,7 +257,7 @@ def test_relationships():
         vote2 = VoteRecord(
             bill_name="SB-2002",
             bill_status="Failed",
-            vote_outcome="No",
+            vote_position="No",
             session_year=2023,
             politician_id=politician.id
         )
@@ -414,7 +424,7 @@ def test_constraint_enforcement():
             invalid_vote = VoteRecord(
                 bill_name="HB-1002",
                 bill_status="Passed",
-                vote_outcome=None,  # required
+                vote_position=None,  # required
                 session_year=2023,
                 politician_id=test_politician.id
             )
@@ -504,5 +514,56 @@ def test_constraint_enforcement():
                 politician_id=None  # required
             )
             session.add(invalid_gift)
+            session.commit()
+        session.rollback()
+
+def test_insert_vote_record_with_invalid_politician_id():
+    """
+    Test that inserting a VoteRecord with a non-existent politician_id raises IntegrityError.
+    This validates the foreign key constraint at the database level.
+    """
+    from sqlalchemy.exc import IntegrityError
+    from sqlmodel import Session
+
+    # Use the same in-memory engine from the module-level setup
+    global engine
+
+    with Session(engine) as session:
+        # Attempt to insert VoteRecord with non-existent politician_id
+        vote = VoteRecord(
+            politician_id=99999,  # Invalid ID
+            bill_name="HB-500",
+            bill_status="Failed",
+            vote_position="No",
+            session_year=2023
+        )
+        session.add(vote)
+
+        with pytest.raises(IntegrityError):
+            session.commit()
+        session.rollback()
+
+def test_insert_gift_with_invalid_politician_id():
+    """
+    Test that inserting a Gift with a non-existent politician_id raises IntegrityError.
+    This validates the foreign key constraint at the database level.
+    """
+    from sqlalchemy.exc import IntegrityError
+    from sqlmodel import Session
+
+    # Use the same in-memory engine from the module-level setup
+    global engine
+
+    with Session(engine) as session:
+        gift = Gift(
+            politician_id=99999,
+            source="XYZ Lobby",
+            value=2500.0,
+            description="Conference ticket",
+            report_date=date(2023, 7, 20)
+        )
+        session.add(gift)
+
+        with pytest.raises(IntegrityError):
             session.commit()
         session.rollback()
