@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from sqlmodel import SQLModel, create_engine
 from server.api.routes import router
 from server.models import Politician, VoteRecord, Gift
@@ -8,7 +9,10 @@ DATABASE_URL = "sqlite:///./politics.db"
 engine = create_engine(DATABASE_URL, echo=True)
 
 # Create the FastAPI application
-app = FastAPI()
+app = FastAPI(
+    title="PolitiTrack API",
+    description="Public database of politician careers and disclosures"
+)
 
 # Include the search router
 app.include_router(router)
