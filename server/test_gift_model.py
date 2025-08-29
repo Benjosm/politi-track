@@ -1,5 +1,6 @@
 from datetime import date
 from sqlmodel import create_engine, Session, SQLModel
+from sqlalchemy.sql import text
 from models import Gift, Politician
 import sqlite3
 import os
@@ -14,7 +15,7 @@ SQLModel.metadata.create_all(engine)
 
 # Enable foreign keys in SQLite
 with engine.connect() as con:
-    con.execute("PRAGMA foreign_keys = ON")
+    con.execute(text("PRAGMA foreign_keys = ON"))
 
 print("Schema generated successfully")
 

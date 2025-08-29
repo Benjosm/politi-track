@@ -1,9 +1,5 @@
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from datetime import date
-from server.models import Politician
+from models import Politician
 
 def test_politician_instantiation():
     # Test instantiating a Politician with valid values
