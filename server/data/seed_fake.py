@@ -1,4 +1,4 @@
-from sqlmodel import Session, create_engine, SQLModel
+from sqlmodel import Session, create_engine, SQLModel, select
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -41,7 +41,7 @@ def seed_db(session: Session):
         session.commit()
         session.refresh(politician)
         
-        # Create exactly 10+ VoteRecord instances for this politician
+        # Create exactly 11 VoteRecord instances for this politician
         num_votes = 11  # Exactly 11 vote records per politician (more than 10)
         party_affiliation = politician.party
         
@@ -82,20 +82,61 @@ def seed_db(session: Session):
         
         # Commit the vote records
         session.commit()
+    
+    # Retrieve all existing politicians before seeding gifts
+    politicians = session.exec(select(Politician)).all()
+    if not politicians:
+        raise ValueError("No politicians found in database. Gift seeding requires existing politician records.")
+    
+    # Define mapping of voting keywords to related industries for gift sources
+    keyword_to_industry = {
+        "energy": ["ExxonMobil", "Chevron", "Shell", "BP", "ConocoPhillips"],
+        "environment": ["NextEra Energy", "Vestas", "First Solar", "Orsted", "Siemens Gamesa"],
+        "health": ["Johnson & Johnson", "Pfizer", "Merck", "AbbVie", "Amgen"],
+        "defense": ["Lockheed Martin", "Raytheon", "Boeing Defense", "Northrop Grumman", "General Dynamics"],
+        "technology": ["Google", "Microsoft", "Amazon", "Meta", "Apple"],
+        "finance": ["JPMorgan Chase", "Goldman Sachs", "Morgan Stanley", "Citigroup", "Bank of America"],
+        "agriculture": ["Cargill", "Archer Daniels Midland", "Pilgrim's Pride", "Tyson Foods", "Land O'Lakes"],
+        "transportation": ["Union Pacific", "FedEx", "United Airlines", "Delta Air Lines", "Caterpillar"]
+    }
+    
+    # Create gifts for all politicians
+    for politician in politicians:
+        # Get all vote records for this politician to analyze voting patterns
+        vote_records = session.exec(select(VoteRecord).where(VoteRecord.politician_id == politician.id)).all()
         
-        # Create 2–4 Gift instances for this politician
-        num_gifts = random.randint(2, 4)
-        for _ in range(num_gifts):
+        # Extract keywords from bill names to determine likely gift sources
+        politician_keywords = []
+        for vote in vote_records:
+            bill_name_lower = vote.bill_name.lower()
+            for keyword in keyword_to_industry.keys():
+                if keyword in bill_name_lower:
+                    politician_keywords.append(keyword)
+        
+        # If no keywords found, use a default industry
+        if not politician_keywords:
+            politician_keywords = ["finance"]  # Default industry for politicians with no clear pattern
+        
+        # Generate at least 5 gift records per politician
+        for _ in range(6):  # Increased to 6 to ensure "5+" gifts per politician
+            # Select a random keyword from the politician's voting pattern
+            keyword = random.choice(politician_keywords)
+            # Select a random company from the corresponding industry
+            source = random.choice(keyword_to_industry[keyword])
+            
+            # Generate gift value using log-normal distribution (keeps values realistic between ~$100-$50,000)
+            value = round(random.lognormvariate(8.5, 0.8), 2)
+            
             gift = Gift(
                 politician_id=politician.id,
-                description=faker.text(max_nb_chars=100),
-                value=random.uniform(50, 10000),
-                report_date=faker.date_this_decade(),
-                source=faker.company()
+                description=faker.text(max_nb_chars=200),
+                value=value,
+                report_date=faker.date_this_year(),
+                source=source  # Now using source from industry mapping, not faker
             )
             session.add(gift)
         
-        # Commit the gifts
+        # Commit gifts in batches per politician
         session.commit()
 
 if __name__ == "__main__":
