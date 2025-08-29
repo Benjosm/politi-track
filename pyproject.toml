@@ -13,9 +13,13 @@ fastapi = "0.104.1"
 sqlmodel = "0.0.15"
 uvicorn = "0.24.0"
 python-dotenv = "1.0.1"
+faker = "^21.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0.0"
+
+[tool.poetry.scripts]
+seed-db = "server.data.seed_fake:seed_db_from_script"
 
 [build-system]
 requires = ["poetry-core"]
