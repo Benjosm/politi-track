@@ -139,7 +139,11 @@ def seed_db(session: Session):
         # Commit gifts in batches per politician
         session.commit()
 
-if __name__ == "__main__":
+def run_seed():
+    """
+    Entrypoint for running the seed script via `poetry run seed-db`.
+    Drops existing tables, recreates schema, and populates with fake data.
+    """
     from server.database import engine
     # Drop all tables first to ensure clean schema
     SQLModel.metadata.drop_all(engine)
@@ -148,6 +152,11 @@ if __name__ == "__main__":
     with Session(engine) as session:
         seed_db(session)
         session.commit()  # Ensure final commit
-    
     # Explicitly dispose of the engine to close all connections
     engine.dispose()
+
+if __name__ == "__main__":
+    run_seed()
+
+# Entry point for poetry scripts
+seed_db_from_script = run_seed
