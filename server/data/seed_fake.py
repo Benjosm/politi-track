@@ -1,4 +1,7 @@
 from sqlmodel import Session, create_engine, SQLModel
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from server.models import Politician, VoteRecord, Gift
 from faker import Faker
 import random
@@ -38,14 +41,41 @@ def seed_db(session: Session):
         session.commit()
         session.refresh(politician)
         
-        # Create 3-5 VoteRecord instances for this politician
-        num_votes = random.randint(3, 5)
+        # Create exactly 10+ VoteRecord instances for this politician
+        num_votes = 11  # Exactly 11 vote records per politician (more than 10)
+        party_affiliation = politician.party
+        
+        # Define party-based expected vote outcomes
+        # For simplicity, assume Democrats tend to vote "Yes" and Republicans "No"
+        # Independents will have a random preference that stays consistent
+        party_expected_vote = {
+            "Democrat": "Yes",
+            "Republican": "No"
+        }
+        # For Independents, randomly choose their expected vote pattern
+        if party_affiliation == "Independent":
+            party_expected_vote["Independent"] = random.choice(["Yes", "No"])
+            
+        expected_outcome = party_expected_vote.get(party_affiliation, random.choice(["Yes", "No"]))
+        
         for _ in range(num_votes):
+            bill_name = faker.sentence(nb_words=4)
+            bill_status = random.choice(["passed", "failed", "pending"])
+            
+            # Determine vote outcome based on 70% party correlation rule
+            if random.random() < 0.7:  # 70% of the time, align with party
+                vote_outcome = expected_outcome
+            else:  # 30% of the time, diverge from party
+                # Choose any outcome except the expected one
+                all_outcomes = ["Yes", "No", "Abstain", "Absent"]
+                all_outcomes.remove(expected_outcome)
+                vote_outcome = random.choice(all_outcomes)
+            
             vote_record = VoteRecord(
                 politician_id=politician.id,
-                bill_name=faker.sentence(nb_words=4),
-                bill_status=random.choice(["Passed", "Failed", "In Progress"]),
-                vote_outcome=random.choice(["Yes", "No", "Abstain", "Absent"]),
+                bill_name=bill_name,
+                bill_status=bill_status,
+                vote_position=vote_outcome,
                 session_year=random.randint(2010, 2023)
             )
             session.add(vote_record)
@@ -69,7 +99,11 @@ def seed_db(session: Session):
         session.commit()
 
 if __name__ == "__main__":
-    engine = create_engine("sqlite:///./test.db")
+    db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../politics.db'))
+    engine = create_engine(f"sqlite:///{db_path}")
+    # Drop all tables first to ensure clean schema
+    SQLModel.metadata.drop_all(engine)
+    # Then create all tables based on current models
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         seed_db(session)
