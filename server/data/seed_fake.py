@@ -140,11 +140,14 @@ def seed_db(session: Session):
         session.commit()
 
 if __name__ == "__main__":
-    db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../politics.db'))
-    engine = create_engine(f"sqlite:///{db_path}")
+    from server.database import engine
     # Drop all tables first to ensure clean schema
     SQLModel.metadata.drop_all(engine)
     # Then create all tables based on current models
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         seed_db(session)
+        session.commit()  # Ensure final commit
+    
+    # Explicitly dispose of the engine to close all connections
+    engine.dispose()
