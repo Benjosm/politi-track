@@ -7,6 +7,20 @@ from server.database import get_session
 router = APIRouter()
 
 
+@router.get("/health/db")
+def test_db_session(db: Session = Depends(get_session)):
+    """
+    Health check endpoint to verify database session injection.
+    Attempts to execute a simple query to confirm connectivity.
+    """
+    try:
+        # Execute a minimal query to check database connectivity
+        db.scalar(select(1))
+        return {"status": "connected", "database": "reachable"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
+
+
 
 async def search_politicians(db: Session, q: str) -> List[dict]:
     """
@@ -57,7 +71,7 @@ async def search_politicians(db: Session, q: str) -> List[dict]:
 
 @router.get("/search")
 async def search(
-    q: str = Query(..., min_length=1, max_length=100, pattern=r"^[a-zA-Z0-9 \\'-.]{1,100}$", description="Alphanumeric search term with hyphens and apostrophes (1-100 chars)"),
+    q: str = Query(..., min_length=1, max_length=100, pattern=r"^[a-zA-Z0-9 \\'-.]{1,100}$", description="Alphanumeric search term with hyphens and apostrophes (1-1,00 chars)"),
     db: Session = Depends(get_session)
 ):
     """
