@@ -1,12 +1,9 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from sqlmodel import SQLModel, create_engine
+from sqlmodel import SQLModel
 from server.api.routes import router
+from server.database import engine
 from server.models import Politician, VoteRecord, Gift
-
-# Database setup
-DATABASE_URL = "sqlite:///./politics.db"
-engine = create_engine(DATABASE_URL, echo=True)
 
 # Create the FastAPI application
 app = FastAPI(
@@ -18,10 +15,7 @@ app = FastAPI(
 app.include_router(router)
 
 def create_db_and_tables():
-    """Create database tables with WAL mode enabled"""
-    with engine.connect() as conn:
-        conn.exec_driver_sql("PRAGMA journal_mode=WAL;")
-        conn.commit()
+    """Create database tables"""
     SQLModel.metadata.create_all(engine)
 
 @app.on_event("startup")
