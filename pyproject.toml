@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "politi-track"
+version = "0.1.0"
+description = "A public-facing professional web application that visualizes politicians' careers through interactive timelines, financial disclosures, and voting records."
+authors = ["AI Engineer <ai@example.com>"]
+packages = [
+  { include = "server" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "0.104.1"
+sqlmodel = "0.0.15"
+uvicorn = "0.24.0"
+python-dotenv = "1.0.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
