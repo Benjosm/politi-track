@@ -28,7 +28,7 @@ class VoteRecord(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     bill_name: str = Field(..., description="Name of the bill being voted on")
     bill_status: str = Field(..., description="Status of the bill (e.g., Passed, Failed)")
-    vote_outcome: str = Field(..., description="Outcome of the vote (e.g., Yes, No)")
+    vote_position: str = Field(..., description="Position in the vote (e.g., Yes, No)")
     session_year: int = Field(..., description="Year of the legislative session")
     politician_id: int = Field(foreign_key="politicians.id")
     politician: "Politician" = Relationship(back_populates="vote_records")
