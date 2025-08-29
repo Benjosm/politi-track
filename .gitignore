@@ -1,0 +1,60 @@
+# Ignore macOS specific files
+.DS_Store
+
+# Ignore Windows specific files
+Thumbs.db
+
+# Ignore IDE configuration files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Ignore Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore Python build artifacts
+build/
+dist/
+*.egg-info/
+
+# Ignore virtual environment files if used locally (Poetry usually manages envs externally)
+# venv/
+# .venv/
+# env/
+
+# Ignore Python testing artifacts
+.pytest_cache/
+htmlcov/
+coverage.xml
+
+# Ignore environment variables file (example is fine, actual secrets are not)
+# The plan mentions .env.example which is committed, but .env should not be.
+.env
+.env.*.local
+*.env.local
+
+# Ignore database files (e.g., SQLite)
+# The project uses SQLite; generated database files should not be committed.
+*.db
+*.sqlite
+*.sqlite3
+
+# Ignore Node.js dependencies
+# The 'client' directory contains the frontend, and node_modules should be ignored.
+client/node_modules/
+
+# Ignore Frontend build output
+# Vite's default output directory is 'dist' within the client folder.
+client/dist/
+
+# Ignore Vite cache
+# Vite generates cache files, often in a .vite directory at the project root.
+.vite/
+
+# Ignore log files
+*.log
