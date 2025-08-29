@@ -1,5 +1,5 @@
 from datetime import date
-from models import VoteRecord, Politician
+from server.models import VoteRecord, Politician
 
 # Create a sample Politician instance (required for foreign key relationship, though not strictly needed for pydantic validation)
 politician = Politician(

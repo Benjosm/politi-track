@@ -1,7 +1,7 @@
 from datetime import date
 from sqlmodel import create_engine, Session, SQLModel
 from sqlalchemy.sql import text
-from models import Gift, Politician
+from server.models import Gift, Politician
 import sqlite3
 import os
 

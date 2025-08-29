@@ -1,5 +1,5 @@
 from datetime import date
-from models import Politician
+from server.models import Politician
 
 def test_politician_instantiation():
     # Test instantiating a Politician with valid values
