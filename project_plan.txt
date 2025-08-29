@@ -1,0 +1,67 @@
+#### 1. High Level Project Design
+PolitiTrack: A public-facing professional web application that visualizes politicians' careers through interactive timelines, financial disclosures, and voting records. Uniquely combines SEC filings, legislative votes, and gift registries into a single narrative flow with party-relationship graphs. Solves the problem of fragmented political data by presenting vetted public records in an intuitive, searchable interface—critical for journalists and voters navigating modern misinformation. Worth the investment because it establishes verifiable open-data infrastructure with zero operational costs (static frontend + embedded DB).
+
+#### 2. Architecture & Technology Decisions
+- Monolith: Single FastAPI service serving React frontend to avoid IPC overhead in resource-constrained container.
+- Python 3.11 (system default) + FastAPI 0.104.1 (async support) + SQLModel 0.0.15 (ORM with Pydantic integration) for backend. React 18.2.0 + Vite 4.5.0 + Tailwind CSS 3.3.3 (JIT mode) for frontend.
+- Data store: SQLite 3.43.0 (via system libsqlite3-0) with PRAGMA journal_mode=WAL for concurrency. No encryption needed (public data).
+- Caching: None (dataset volume < 10k records fits in 5GB RAM).
+- **Verification**: `poetry check` (manual), `npm ci --dry-run` (manual build), validate schema.py against SQLModel docs.
+
+#### 3. Security Design
+- Authentication: None (public data access).
+- Encryption: Omitted (public data per user specs).
+- Input validation: FastAPI Path/Query params with re.Pattern(r'^[a-zA-Z0-9 ]{1,100}$') + Pydantic models strict JSON parsing.
+- **Verification**: Manual inspection of `api/dependencies.py` + curl test with `search?q=<script>alert()</script>` (must return 422).
+
+#### 4. Project Skeleton & File Layout
+Required files/directories:
+/usr/src/project/
+├── client/
+│   ├── index.html
+│   ├── main.jsx
+│   ├── vite.config.js
+│   ├── package.json
+│   └── src/
+│       ├── App.jsx
+│       ├── components/
+│       │   ├── Timeline.jsx
+│       │   └── SearchBar.jsx
+│       └── lib/api.js
+├── server/
+│   ├── main.py
+│   ├── models.py
+│   ├── api/
+│   │   ├── __init__.py
+│   │   └── routes.py
+│   └── data/
+│       └── seed_fake.py
+├── pyproject.toml
+├── .env.example
+└── README.md
+- **Verification**: `tree -I '__pycache__|node_modules'` (manual inspection)
+
+#### 5. Module-by-Module Creation Strategy
+- `server/models.py`: Defines SQLModel classes (Politician, VoteRecord, Gift). Public: `class Politician(SQLModel, table=True)`. **Verification**: Run `poetry run python -c "from server.models import Politician; print(Politician.__table__)"`.
+- `server/api/routes.py`: FastAPI endpoints. Public: `@router.get("/search") async def search(q: str = Query(..., pattern=...))`. **Verification**: Manual run of `curl "http://localhost:8000/search?q=Tester"` after startup.
+- `client/src/components/Timeline.jsx`: Visualizes career events. Public: `const Timeline = ({ events }) => (...)`. **Verification**: Vite dev server smoke test with fake events prop.
+- `server/data/seed_fake.py`: Generates test data. Public: `def seed_db(session: Session)`. **Verification**: Unit test in `tests/test_seed.py` checking row counts.
+
+#### 6. Dependency & Build Management
+- Backend: fastapi==0.104.1, sqlmodel==0.0.15, uvicorn==0.24.0, python-dotenv==1.0.1
+- Frontend: react@18.2.0, react-dom@18.2.0, vite@4.5.0, axios@1.6.0, tailwindcss@3.3.3
+- Build sequence: 
+  1. `poetry install && poetry run python server/data/seed_fake.py` 
+  2. `cd client && npm ci && npm run build`
+- **Verification**: Both commands exit 0 (manual build)
+
+#### 7. Local Simulation & Stubbing Plan
+- External concerns: None (all data local). Fallback: `seed_fake.py` populates SQLite with Faker-generated records (names from US congress datasets).
+- **Verification**: `poetry run pytest -k test_seed_row_counts` (unit test checking >=5 politicians created).
+
+#### 8. Completion Definition
+[X] `poetry run uvicorn server.main:app --port 8000` shows "Application startup complete"
+[X] `cd client && npm run dev` loads homepage at http://localhost:5173
+[X] Search "Alexandria" returns 3+ fake profiles
+[X] Timeline component renders investment events after profile click
+[X] All files from Section 4 exist with non-empty content
