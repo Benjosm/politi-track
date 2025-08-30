@@ -3,6 +3,7 @@ import { searchPoliticians } from './lib/api';
 import SearchBar from './components/SearchBar';
 import Timeline from './components/Timeline';
 import { Politician } from './lib/types';
+import { mockTimelineEvents } from './mocks/mockTimelineEvents';
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -13,27 +14,25 @@ function App() {
 
   /**
    * Formats term dates to show year ranges (e.g., "2020 - Present")
-   * @param {string} termStart - The start date in ISO format
-   * @param {string} termEnd - The end date in ISO format (optional)
+   * @param {Date} termStart - The start date as Date object
+   * @param {Date | undefined} termEnd - The end date as Date object (optional)
    * @returns {string} Formatted year range
    */
-  const formatTermDates = (termStart: string, termEnd?: string): string => {
-    const start = new Date(termStart);
-    const startValid = !isNaN(start.getTime());
-    const startYear = startValid ? start.getFullYear() : '';
-
+  const formatTermDates = (termStart: Date, termEnd?: Date): string => {
+    const startValid = !isNaN(termStart.getTime());
+    const startYear = startValid ? termStart.getFullYear() : '';
+  
     if (!startValid) {
       return '';
     }
-
-    if (!termEnd || !termEnd.trim()) {
+  
+    if (!termEnd) {
       return `${startYear} - Present`;
     }
-
-    const end = new Date(termEnd);
-    const endValid = !isNaN(end.getTime());
-    const endYear = endValid ? end.getFullYear() : 'Present';
-
+  
+    const endValid = !isNaN(termEnd.getTime());
+    const endYear = endValid ? termEnd.getFullYear() : 'Present';
+  
     return `${startYear} - ${endYear}`;
   };
 
@@ -76,7 +75,7 @@ function App() {
           <p><strong>Party:</strong> {activePolitician.party}</p>
           <p><strong>Office:</strong> {activePolitician.office}</p>
           <p><strong>Term:</strong> {formatTermDates(activePolitician.term_start, activePolitician.term_end)}</p>
-          <Timeline politician={activePolitician} />
+          <Timeline politician={activePolitician} events={mockTimelineEvents} />
         </div>
       ) : (
         // Search/Home View
