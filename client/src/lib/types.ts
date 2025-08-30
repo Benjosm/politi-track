@@ -3,10 +3,25 @@
  */
 
 export interface Politician {
-  id: string | number;
+  id: number;
   name: string;
   party: string;
   office: string;
-  term_start: string;
-  term_end?: string;
+  term_start: Date;
+  term_end?: Date;
+}
+
+export interface FinancialDisclosure {
+  amount: number;
+  category: string;
+  source: string;
+}
+
+export interface TimelineEvent {
+  id: string | number;
+  year: number;
+  type: string;
+  title: string;
+  description: string;
+  financialData: FinancialDisclosure[];
 }
