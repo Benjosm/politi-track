@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { searchPoliticians } from './lib/api';
 import SearchBar from './components/SearchBar';
 import Timeline from './components/Timeline';
 import { Politician } from './lib/types';
 import { mockTimelineEvents } from './mocks/mockTimelineEvents';
+import TestApi from './TestApi';
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,51 +64,68 @@ function App() {
     }
   };
 
+  // Check for test query parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const testParam = urlParams.get('test');
+    
+    if (testParam === 'api') {
+      document.title = 'API Wrapper Test';
+    }
+  }, []);
+
   return (
     <div className="App">
-      {activePolitician ? (
-        // Detail View
-        <div className="politician-detail">
-          <button className="back-button" onClick={() => setActivePolitician(null)}>
-            ← Back to Search
-          </button>
-          <h1>{activePolitician.name}</h1>
-          <p><strong>Party:</strong> {activePolitician.party}</p>
-          <p><strong>Office:</strong> {activePolitician.office}</p>
-          <p><strong>Term:</strong> {formatTermDates(activePolitician.term_start, activePolitician.term_end)}</p>
-          <Timeline politician={activePolitician} events={mockTimelineEvents} />
-        </div>
+      {/* Check for test query parameter */}
+      {new URLSearchParams(window.location.search).get('test') === 'api' ? (
+        <TestApi />
       ) : (
-        // Search/Home View
-        <div className="search-view">
-          <header className="app-header">
-            <h1>PolitiTrack</h1>
-          </header>
-          <SearchBar onSearch={handleSearch} onResults={setSearchResults} onError={setError} />
-          {isLoading ? (
-            <p>Loading...</p>
-          ) : error ? (
-            <p className="error-message">{error}</p>
-          ) : searchResults.length > 0 ? (
-            <div className="results-grid">
-              {searchResults.map((politician) => (
-                <div
-                  key={politician.id}
-                  className="politician-card"
-                  onClick={() => setActivePolitician(politician)}
-                >
-                  <h3>{politician.name}</h3>
-                  <p>{politician.party} - {politician.office}</p>
-                  <p>{formatTermDates(politician.term_start, politician.term_end)}</p>
-                </div>
-              ))}
+        <>
+          {activePolitician ? (
+            // Detail View
+            <div className="politician-detail">
+              <button className="back-button" onClick={() => setActivePolitician(null)}>
+                ← Back to Search
+              </button>
+              <h1>{activePolitician.name}</h1>
+              <p><strong>Party:</strong> {activePolitician.party}</p>
+              <p><strong>Office:</strong> {activePolitician.office}</p>
+              <p><strong>Term:</strong> {formatTermDates(activePolitician.term_start, activePolitician.term_end)}</p>
+              <Timeline politician={activePolitician} events={mockTimelineEvents} />
             </div>
-          ) : searchQuery ? (
-            <p>No results found for "{searchQuery}"</p>
           ) : (
-            <p>Enter a name to search for politicians</p>
+            // Search/Home View
+            <div className="search-view">
+              <header className="app-header">
+                <h1>PolitiTrack</h1>
+              </header>
+              <SearchBar onSearch={handleSearch} onResults={setSearchResults} onError={setError} />
+              {isLoading ? (
+                <p>Loading...</p>
+              ) : error ? (
+                <p className="error-message">{error}</p>
+              ) : searchResults.length > 0 ? (
+                <div className="results-grid">
+                  {searchResults.map((politician) => (
+                    <div
+                      key={politician.id}
+                      className="politician-card"
+                      onClick={() => setActivePolitician(politician)}
+                    >
+                      <h3>{politician.name}</h3>
+                      <p>{politician.party} - {politician.office}</p>
+                      <p>{formatTermDates(politician.term_start, activePolitician.term_end)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : searchQuery ? (
+                <p>No results found for "{searchQuery}"</p>
+              ) : (
+                <p>Enter a name to search for politicians</p>
+              )}
+            </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );
