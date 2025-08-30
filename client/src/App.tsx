@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { searchPoliticians } from './lib/api';
-import SearchBar from './components/SearchBar.jsx';
-import Timeline from './components/Timeline.jsx';
+import SearchBar from './components/SearchBar';
+import Timeline from './components/Timeline';
+import { Politician } from './lib/types';
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [activePolitician, setActivePolitician] = useState(null);
-  const [error, setError] = useState(null);
+  const [searchResults, setSearchResults] = useState<Politician[]>([]);
+  const [activePolitician, setActivePolitician] = useState<Politician | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   /**
@@ -16,7 +17,7 @@ function App() {
    * @param {string} termEnd - The end date in ISO format (optional)
    * @returns {string} Formatted year range
    */
-  const formatTermDates = (termStart, termEnd) => {
+  const formatTermDates = (termStart: string, termEnd?: string): string => {
     const start = new Date(termStart);
     const startValid = !isNaN(start.getTime());
     const startYear = startValid ? start.getFullYear() : '';
@@ -40,7 +41,7 @@ function App() {
    * Handles the search operation when the user submits a query
    * @param {string} query - The search query to look up
    */
-  const handleSearch = async (query) => {
+  const handleSearch = async (query: string) => {
     // Set loading state and clear previous error
     setSearchQuery(query);
     setIsLoading(true);
@@ -48,7 +49,7 @@ function App() {
 
     try {
       // Call the API to search for politicians
-      const results = await searchPoliticians(query);
+      const results: Politician[] = await searchPoliticians(query);
       
       // Update state with the search results and reset active politician
       setSearchResults(results);

@@ -1,15 +1,15 @@
-// No imports needed - using native fetch API
-
 // Base URL for the API - this would typically be configured based on environment
 const API_BASE_URL = '/api';
+
+import { Politician } from './types';
 
 /**
  * Searches for politicians based on a query string
  * @param {string} query - The search query (e.g., name, party, district)
- * @returns {Promise<Array>} A promise that resolves to an array of politician objects
+ * @returns {Promise<Politician[]>} A promise that resolves to an array of politician objects
  * @throws {Error} When the API request fails
  */
-export async function searchPoliticians(query) {
+export async function searchPoliticians(query: string): Promise<Politician[]> {
   try {
     // Validate input
     if (!query || typeof query !== 'string') {

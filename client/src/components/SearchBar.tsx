@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
+import { Politician } from '../lib/types';
 
-const SearchBar = ({ onSearch, onResults, onError }) => {
+interface SearchBarProps {
+  onSearch: (query: string) => void;
+  onResults: (results: Politician[]) => void;
+  onError: (error: string | null) => void;
+}
+
+const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onResults, onError }) => {
   const [query, setQuery] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
     
