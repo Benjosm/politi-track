@@ -58,3 +58,6 @@ client/dist/
 
 # Ignore log files
 *.log
+
+# Ignore root-level Node.js dependencies
+node_modules/
