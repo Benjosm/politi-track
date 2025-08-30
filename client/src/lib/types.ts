@@ -18,10 +18,29 @@ export interface FinancialDisclosure {
 }
 
 export interface TimelineEvent {
-  id: string | number;
+  id: number;
   year: number;
   type: string;
   title: string;
   description: string;
   financialData: FinancialDisclosure[];
+}
+
+export interface Issue {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  relatedPoliticians: number[];
+  timelineEvents: number[];
+}
+
+export interface Attachment {
+  id: number;
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+  uploadDate: string;
+  relatedTo: string;
 }
