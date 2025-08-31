@@ -1,0 +1,26 @@
+# Dependency directories
+node_modules/
+
+# Vite build output
+dist/
+
+# Vite cache
+.vite/
+
+# Test results
+coverage/
+
+# Docker files
+Dockerfile
+docker-compose.yml
+
+# Git directory
+.git
+.gitignore
+
+# Editor/IDE config
+.vscode/
+.idea/
+
+# Log files
+npm-debug.log*

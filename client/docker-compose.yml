@@ -1,0 +1,25 @@
+services:
+  client:
+    # Build the image from the Dockerfile in the current directory (.)
+    build: .
+    
+    # Set a container name for easier management
+    container_name: politi-track-client-dev
+    
+    # Map port 5173 on your host machine to port 5173 in the container
+    ports:
+      - "5173:5173"
+      
+    # Mount volumes for live code reloading
+    volumes:
+      # Mount the current directory on the host to /app in the container
+      # This allows changes you make to your code to be reflected instantly.
+      - .:/app
+      
+      # Use a named volume for node_modules to prevent the host's
+      # node_modules from overwriting the container's. This is a crucial optimization.
+      - /app/node_modules
+      
+    # Keep the container running
+    stdin_open: true
+    tty: true

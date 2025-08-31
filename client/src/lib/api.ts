@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { Attachment, Issue, Politician, TimelineEvent } from './types';
 
 // Configuration using Vite environment variables
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'; // ERROR: Property 'env' does not exist on type 'ImportMeta'.
 const IS_MOCK = import.meta.env.VITE_API_MOCK === 'true';
 
 // Create the configured axios instance
@@ -145,6 +146,45 @@ export async function getAttachments(relatedTo?: string): Promise<Attachment[]> 
     return response.data;
   } catch (error) {
     console.error('Failed to fetch attachments:', error);
+    throw error;
+  }
+}
+
+/**
+ * Searches for politicians based on a query string.
+ * @param query The search term.
+ * @returns Promise resolving to a list of matching Politician objects.
+ */
+export async function searchPoliticians(query: string): Promise<Politician[]> {
+  // Return empty array if query is empty to avoid unnecessary requests
+  if (!query || query.trim() === '') {
+    return [];
+  }
+
+  await loadMockData();
+
+  if (IS_MOCK) {
+    console.log(`Searching mock politicians for: "${query}"`);
+    const lowerCaseQuery = query.toLowerCase();
+    // Filter mock data based on name
+    return mockPoliticians.filter(p =>
+      p.name.toLowerCase().includes(lowerCaseQuery)
+    );
+  }
+
+  try {
+    // In a real API, search is often handled by a query parameter like 'q' or 'search'
+    const response = await apiClient.get<Politician[]>('/politicians', {
+      params: { q: query }
+    });
+    // Map response and convert date strings to Date objects, same as getPoliticians
+    return response.data.map(politician => ({
+      ...politician,
+      term_start: new Date(politician.term_start),
+      term_end: politician.term_end ? new Date(politician.term_end) : undefined,
+    }));
+  } catch (error) {
+    console.error(`Failed to search for politicians with query "${query}":`, error);
     throw error;
   }
 }
