@@ -1,14 +1,27 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from sqlmodel import SQLModel
-from server.api.routes import router
-from server.database import engine
+from fastapi.middleware.cors import CORSMiddleware
+from api.routes import router
+from server.database import engine, SQLModel
 from server.models import Politician, VoteRecord, Gift
 
 # Create the FastAPI application
 app = FastAPI(
     title="PolitiTrack API",
     description="Public database of politician careers and disclosures"
+)
+
+# Allow your frontend origin
+origins = [
+    "http://localhost:5173"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include the search router

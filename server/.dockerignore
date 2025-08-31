@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Unit test / coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Virtualenv
+.env
+.venv
+env/
+venv/
+
+# Poetry
+poetry.lock
+
+# Logs
+*.log
+
+# SQLite databases (don’t copy local dev DB into container)
+politics.db
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Git
+.git
+.gitignore
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Node (if mixed repo)
+node_modules/
+dist/

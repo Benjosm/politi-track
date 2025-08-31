@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Attachment, Issue, Politician, TimelineEvent } from './types';
 
 // Configuration using Vite environment variables
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'; // ERROR: Property 'env' does not exist on type 'ImportMeta'.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const IS_MOCK = import.meta.env.VITE_API_MOCK === 'true';
 
 // Create the configured axios instance
@@ -56,7 +56,7 @@ let mockAttachments: typeof import('../mocks/mockAttachments').mockAttachments;
 
 // Dynamically import mock data when needed
 async function loadMockData() {
-  if (IS_MOCK) {
+  if (IS_MOCK && !mockPoliticians) { // Prevent re-importing
     const mocks = await import('../mocks/mockPoliticians');
     mockPoliticians = mocks.mockPoliticians;
     mockTimelineEvents = (await import('../mocks/mockTimelineEvents')).mockTimelineEvents;
@@ -72,17 +72,18 @@ async function loadMockData() {
 export async function getPoliticians(): Promise<Politician[]> {
   await loadMockData();
   if (IS_MOCK) return [...mockPoliticians];
-  
+
   try {
-    const response = await apiClient.get<any[]>('/politicians');
-    return response.data.map(politician => ({
+    const response = await apiClient.get<Politician[]>('/politicians');
+    // Default to an empty array if response.data is falsy
+    return (response.data || []).map(politician => ({
       ...politician,
       term_start: new Date(politician.term_start),
       term_end: politician.term_end ? new Date(politician.term_end) : undefined
     }));
   } catch (error) {
     console.error('Failed to fetch politicians:', error);
-    throw error;
+    return []; // Return empty array on error
   }
 }
 
@@ -94,18 +95,18 @@ export async function getPoliticians(): Promise<Politician[]> {
 export async function getTimelineEvents(politicianId?: number): Promise<TimelineEvent[]> {
   await loadMockData();
   if (IS_MOCK) {
-    // In mock mode, we don't filter by politician - return all
     return [...mockTimelineEvents];
   }
-  
+
   try {
     const response = await apiClient.get<TimelineEvent[]>('/timeline', {
       params: { politicianId }
     });
-    return response.data;
+    // Default to an empty array if response.data is falsy
+    return response.data || [];
   } catch (error) {
     console.error('Failed to fetch timeline events:', error);
-    throw error;
+    return []; // Return empty array on error
   }
 }
 
@@ -116,13 +117,14 @@ export async function getTimelineEvents(politicianId?: number): Promise<Timeline
 export async function getIssues(): Promise<Issue[]> {
   await loadMockData();
   if (IS_MOCK) return [...mockIssues];
-  
+
   try {
     const response = await apiClient.get<Issue[]>('/issues');
-    return response.data;
+    // Default to an empty array if response.data is falsy
+    return response.data || [];
   } catch (error) {
     console.error('Failed to fetch issues:', error);
-    throw error;
+    return []; // Return empty array on error
   }
 }
 
@@ -134,19 +136,19 @@ export async function getIssues(): Promise<Issue[]> {
 export async function getAttachments(relatedTo?: string): Promise<Attachment[]> {
   await loadMockData();
   if (IS_MOCK) {
-    // Basic filtering in mock mode - would be done by backend in live mode
     if (!relatedTo) return [...mockAttachments];
     return mockAttachments.filter(att => att.relatedTo === relatedTo);
   }
-  
+
   try {
     const response = await apiClient.get<Attachment[]>('/attachments', {
       params: { relatedTo }
     });
-    return response.data;
+    // Default to an empty array if response.data is falsy
+    return response.data || [];
   } catch (error) {
     console.error('Failed to fetch attachments:', error);
-    throw error;
+    return []; // Return empty array on error
   }
 }
 
@@ -156,7 +158,6 @@ export async function getAttachments(relatedTo?: string): Promise<Attachment[]> 
  * @returns Promise resolving to a list of matching Politician objects.
  */
 export async function searchPoliticians(query: string): Promise<Politician[]> {
-  // Return empty array if query is empty to avoid unnecessary requests
   if (!query || query.trim() === '') {
     return [];
   }
@@ -164,27 +165,24 @@ export async function searchPoliticians(query: string): Promise<Politician[]> {
   await loadMockData();
 
   if (IS_MOCK) {
-    console.log(`Searching mock politicians for: "${query}"`);
     const lowerCaseQuery = query.toLowerCase();
-    // Filter mock data based on name
     return mockPoliticians.filter(p =>
       p.name.toLowerCase().includes(lowerCaseQuery)
     );
   }
 
   try {
-    // In a real API, search is often handled by a query parameter like 'q' or 'search'
-    const response = await apiClient.get<Politician[]>('/politicians', {
+    const response = await apiClient.get<Politician[]>('/search', {
       params: { q: query }
     });
-    // Map response and convert date strings to Date objects, same as getPoliticians
-    return response.data.map(politician => ({
+    // Default to an empty array if response.data is falsy
+    return (response.data || []).map(politician => ({
       ...politician,
       term_start: new Date(politician.term_start),
       term_end: politician.term_end ? new Date(politician.term_end) : undefined,
     }));
   } catch (error) {
     console.error(`Failed to search for politicians with query "${query}":`, error);
-    throw error;
+    return []; // Return empty array on error
   }
 }

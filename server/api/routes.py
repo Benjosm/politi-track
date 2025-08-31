@@ -50,7 +50,7 @@ async def search_politicians(db: Session, q: str) -> List[dict]:
         )
         
         # Execute the query
-        results = db.exec(query).all()
+        results = db.execute(query).scalars().all()
         
         # Project results to include only the required fields
         return [
@@ -84,4 +84,5 @@ async def search(
         return {"results": results}
     except Exception as e:
         # Return 500 Internal Server Error for database connection errors
+        print(e)
         raise HTTPException(status_code=500, detail="Internal server error occurred while processing your request.")

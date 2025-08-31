@@ -19,7 +19,26 @@ services:
       # Use a named volume for node_modules to prevent the host's
       # node_modules from overwriting the container's. This is a crucial optimization.
       - /app/node_modules
+    
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+      - VITE_API_MOCK=true
       
     # Keep the container running
     stdin_open: true
     tty: true
+
+  api:
+    build: 
+      context: ..
+      dockerfile: server/Dockerfile
+    container_name: politi-track-api-dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../server:/app/server
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONPATH=/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
